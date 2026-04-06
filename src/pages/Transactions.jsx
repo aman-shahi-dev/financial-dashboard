@@ -13,7 +13,7 @@ import {
 } from "../store/transactionsSlice";
 import { openModal } from "../store/uiSlice";
 import { can } from "../utils/rbac";
-import { CATEGORIES, CATEGORY_COLORS } from "../utils/mockData";
+import { CATEGORIES } from "../utils/mockData";
 import { formatCurrency } from "../utils/formatters";
 import { exportToCSV, exportToJSON } from "../utils/exportUtils";
 import TransactionRow from "../components/ui/TransactionRow";
@@ -26,16 +26,17 @@ const SORT_OPTIONS = [
   { value: "amount-asc", label: "Lowest amount" },
 ];
 
-const selectStyle = {
+const sel = {
   background: "var(--color-surface)",
   border: "0.5px solid var(--color-border)",
   borderRadius: "8px",
-  padding: "8px 12px",
+  padding: "8px 10px",
   fontSize: "13px",
   color: "var(--color-text-primary)",
   cursor: "pointer",
   outline: "none",
   fontFamily: "Inter, sans-serif",
+  flex: "1 1 120px",
 };
 
 export default function Transactions() {
@@ -48,10 +49,8 @@ export default function Transactions() {
   const role = useAppSelector((s) => s.auth.role);
   const [showExport, setShowExport] = useState(false);
 
-  // Filter + sort
   const filtered = useMemo(() => {
     let list = [...transactions];
-
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
@@ -63,7 +62,6 @@ export default function Transactions() {
     if (filterCat !== "All")
       list = list.filter((t) => t.category === filterCat);
     if (filterType !== "All") list = list.filter((t) => t.type === filterType);
-
     list.sort((a, b) => {
       if (sortBy === "date-desc") return new Date(b.date) - new Date(a.date);
       if (sortBy === "date-asc") return new Date(a.date) - new Date(b.date);
@@ -71,18 +69,15 @@ export default function Transactions() {
       if (sortBy === "amount-asc") return a.amount - b.amount;
       return 0;
     });
-
     return list;
   }, [transactions, searchQuery, filterCat, filterType, sortBy]);
 
-  // Totals from filtered list
   const filteredIncome = filtered
     .filter((t) => t.type === "income")
     .reduce((s, t) => s + t.amount, 0);
   const filteredExpenses = filtered
     .filter((t) => t.type === "expense")
     .reduce((s, t) => s + t.amount, 0);
-
   const hasActiveFilters =
     searchQuery || filterCat !== "All" || filterType !== "All";
 
@@ -91,7 +86,7 @@ export default function Transactions() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+      style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
       {/* Toolbar */}
       <div
@@ -99,7 +94,7 @@ export default function Transactions() {
           background: "var(--color-surface)",
           border: "0.5px solid var(--color-border)",
           borderRadius: "14px",
-          padding: "16px 20px",
+          padding: "16px",
           display: "flex",
           flexDirection: "column",
           gap: "12px",
@@ -109,31 +104,33 @@ export default function Transactions() {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "8px",
             flexWrap: "wrap",
             alignItems: "center",
           }}
         >
-          {/* Search */}
-          <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
+          <div
+            style={{ position: "relative", flex: "1 1 180px", minWidth: "0" }}
+          >
             <Search
               size={14}
               style={{
                 position: "absolute",
-                left: "12px",
+                left: "10px",
                 top: "50%",
                 transform: "translateY(-50%)",
                 color: "var(--color-text-secondary)",
+                pointerEvents: "none",
               }}
             />
             <input
               type="text"
-              placeholder="Search transactions..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => dispatch(setSearchQuery(e.target.value))}
               style={{
                 width: "100%",
-                padding: "9px 12px 9px 34px",
+                padding: "9px 10px 9px 30px",
                 borderRadius: "8px",
                 border: "0.5px solid var(--color-border)",
                 background: "var(--color-surface-2)",
@@ -145,131 +142,131 @@ export default function Transactions() {
             />
           </div>
 
-          {/* Export dropdown */}
-          {can(role, "canExportData") && (
-            <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+            {can(role, "canExportData") && (
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => setShowExport(!showExport)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    background: "var(--color-surface-2)",
+                    border: "0.5px solid var(--color-border)",
+                    borderRadius: "8px",
+                    padding: "8px 12px",
+                    fontSize: "13px",
+                    color: "var(--color-text-primary)",
+                    cursor: "pointer",
+                    fontFamily: "Inter, sans-serif",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <Download size={13} /> Export
+                </button>
+                {showExport && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "110%",
+                      right: 0,
+                      background: "var(--color-surface)",
+                      border: "0.5px solid var(--color-border)",
+                      borderRadius: "10px",
+                      padding: "6px",
+                      zIndex: 50,
+                      minWidth: "130px",
+                    }}
+                  >
+                    {["CSV", "JSON"].map((fmt) => (
+                      <button
+                        key={fmt}
+                        onClick={() => {
+                          fmt === "CSV"
+                            ? exportToCSV(filtered)
+                            : exportToJSON(filtered);
+                          setShowExport(false);
+                        }}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          textAlign: "left",
+                          padding: "8px 12px",
+                          background: "none",
+                          border: "none",
+                          borderRadius: "7px",
+                          fontSize: "13px",
+                          color: "var(--color-text-primary)",
+                          cursor: "pointer",
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background =
+                            "var(--color-surface-2)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "none")
+                        }
+                      >
+                        Download {fmt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {can(role, "canAddTransaction") && (
               <button
-                onClick={() => setShowExport(!showExport)}
+                onClick={() => dispatch(openModal(null))}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
-                  background: "var(--color-surface-2)",
-                  border: "0.5px solid var(--color-border)",
+                  gap: "5px",
+                  background: "#f97316",
+                  color: "#fff",
+                  border: "none",
                   borderRadius: "8px",
                   padding: "8px 12px",
                   fontSize: "13px",
-                  color: "var(--color-text-primary)",
+                  fontWeight: 500,
                   cursor: "pointer",
                   fontFamily: "Inter, sans-serif",
+                  whiteSpace: "nowrap",
                 }}
               >
-                <Download size={14} /> Export
+                <Plus size={13} /> Add
               </button>
-              {showExport && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "110%",
-                    right: 0,
-                    background: "var(--color-surface)",
-                    border: "0.5px solid var(--color-border)",
-                    borderRadius: "10px",
-                    padding: "6px",
-                    zIndex: 50,
-                    minWidth: "140px",
-                  }}
-                >
-                  {["CSV", "JSON"].map((fmt) => (
-                    <button
-                      key={fmt}
-                      onClick={() => {
-                        fmt === "CSV"
-                          ? exportToCSV(filtered)
-                          : exportToJSON(filtered);
-                        setShowExport(false);
-                      }}
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        textAlign: "left",
-                        padding: "8px 12px",
-                        background: "none",
-                        border: "none",
-                        borderRadius: "7px",
-                        fontSize: "13px",
-                        color: "var(--color-text-primary)",
-                        cursor: "pointer",
-                        fontFamily: "Inter, sans-serif",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "var(--color-surface-2)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "none")
-                      }
-                    >
-                      Download {fmt}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Add button */}
-          {can(role, "canAddTransaction") && (
-            <button
-              onClick={() => dispatch(openModal(null))}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "#f97316",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                padding: "8px 14px",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: "pointer",
-                fontFamily: "Inter, sans-serif",
-              }}
-            >
-              <Plus size={14} /> Add
-            </button>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Row 2: filters */}
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "8px",
             flexWrap: "wrap",
             alignItems: "center",
           }}
         >
           <SlidersHorizontal
-            size={14}
+            size={13}
             style={{ color: "var(--color-text-secondary)", flexShrink: 0 }}
           />
-
           <select
             value={filterType}
             onChange={(e) => dispatch(setFilterType(e.target.value))}
-            style={selectStyle}
+            style={sel}
           >
             <option value="All">All types</option>
             <option value="income">Income</option>
             <option value="expense">Expense</option>
           </select>
-
           <select
             value={filterCat}
             onChange={(e) => dispatch(setFilterCategory(e.target.value))}
-            style={selectStyle}
+            style={sel}
           >
             <option value="All">All categories</option>
             {CATEGORIES.map((c) => (
@@ -278,11 +275,10 @@ export default function Transactions() {
               </option>
             ))}
           </select>
-
           <select
             value={sortBy}
             onChange={(e) => dispatch(setSortBy(e.target.value))}
-            style={selectStyle}
+            style={sel}
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -290,7 +286,6 @@ export default function Transactions() {
               </option>
             ))}
           </select>
-
           {hasActiveFilters && (
             <button
               onClick={() => dispatch(resetFilters())}
@@ -306,16 +301,17 @@ export default function Transactions() {
                 color: "var(--color-text-secondary)",
                 cursor: "pointer",
                 fontFamily: "Inter, sans-serif",
+                whiteSpace: "nowrap",
               }}
             >
-              <X size={12} /> Clear filters
+              <X size={12} /> Clear
             </button>
           )}
         </div>
       </div>
 
-      {/* Filtered summary strip */}
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+      {/* Summary strip */}
+      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
         {[
           {
             label: "Showing",
@@ -339,10 +335,11 @@ export default function Transactions() {
               background: "var(--color-surface)",
               border: "0.5px solid var(--color-border)",
               borderRadius: "10px",
-              padding: "10px 16px",
+              padding: "10px 14px",
               display: "flex",
               alignItems: "center",
               gap: "8px",
+              flex: "1 1 100px",
             }}
           >
             <span
@@ -357,13 +354,13 @@ export default function Transactions() {
         ))}
       </div>
 
-      {/* Transaction list */}
+      {/* List */}
       <div
         style={{
           background: "var(--color-surface)",
           border: "0.5px solid var(--color-border)",
           borderRadius: "14px",
-          padding: "16px 20px",
+          padding: "16px",
         }}
       >
         {filtered.length === 0 ? (

@@ -24,27 +24,28 @@ export default function TransactionRow({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "12px 16px",
+        padding: "10px 12px",
         borderRadius: "10px",
         border: "0.5px solid var(--color-border)",
         background: "var(--color-surface)",
-        gap: "12px",
+        gap: "8px",
+        flexWrap: "wrap",
       }}
     >
-      {/* Category dot + info */}
+      {/* Left: icon + info */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "12px",
+          gap: "10px",
           flex: 1,
-          minWidth: 0,
+          minWidth: "140px",
         }}
       >
         <div
           style={{
-            width: "36px",
-            height: "36px",
+            width: "34px",
+            height: "34px",
             borderRadius: "9px",
             flexShrink: 0,
             background: `${color}18`,
@@ -62,11 +63,10 @@ export default function TransactionRow({
             }}
           />
         </div>
-
         <div style={{ minWidth: 0 }}>
           <p
             style={{
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: 500,
               color: "var(--color-text-primary)",
               whiteSpace: "nowrap",
@@ -78,7 +78,7 @@ export default function TransactionRow({
           </p>
           <p
             style={{
-              fontSize: "12px",
+              fontSize: "11px",
               color: "var(--color-text-secondary)",
               marginTop: "2px",
             }}
@@ -88,20 +88,21 @@ export default function TransactionRow({
         </div>
       </div>
 
-      {/* Amount + actions */}
+      {/* Right: amount + actions */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "12px",
+          gap: "8px",
           flexShrink: 0,
         }}
       >
         <span
           style={{
-            fontSize: "15px",
+            fontSize: "14px",
             fontWeight: 600,
             color: isIncome ? "var(--color-income)" : "var(--color-expense)",
+            whiteSpace: "nowrap",
           }}
         >
           {isIncome ? "+" : "-"}
@@ -120,7 +121,6 @@ export default function TransactionRow({
               borderRadius: "6px",
               display: "flex",
               alignItems: "center",
-              transition: "color 0.15s",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#f97316")}
             onMouseLeave={(e) =>
@@ -143,7 +143,6 @@ export default function TransactionRow({
               borderRadius: "6px",
               display: "flex",
               alignItems: "center",
-              transition: "color 0.15s",
             }}
             onMouseEnter={(e) =>
               (e.currentTarget.style.color = "var(--color-expense)")

@@ -25,11 +25,10 @@ export default function SummaryCard({
         display: "flex",
         flexDirection: "column",
         gap: "12px",
-        flex: 1,
-        minWidth: "180px",
+        flex: "1 1 140px",
+        minWidth: "140px",
       }}
     >
-      {/* Top row */}
       <div
         style={{
           display: "flex",
@@ -57,6 +56,7 @@ export default function SummaryCard({
               alignItems: "center",
               justifyContent: "center",
               color: accent ?? "var(--color-text-secondary)",
+              flexShrink: 0,
             }}
           >
             <Icon size={15} />
@@ -64,22 +64,28 @@ export default function SummaryCard({
         )}
       </div>
 
-      {/* Value */}
       <div
         style={{
-          fontSize: "26px",
+          fontSize: "24px",
           fontWeight: 700,
           color: accent ?? "var(--color-text-primary)",
           letterSpacing: "-0.5px",
           lineHeight: 1,
+          wordBreak: "break-all",
         }}
       >
         {value}
       </div>
 
-      {/* Trend */}
       {trend !== undefined && (
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            flexWrap: "wrap",
+          }}
+        >
           <div
             style={{
               display: "inline-flex",

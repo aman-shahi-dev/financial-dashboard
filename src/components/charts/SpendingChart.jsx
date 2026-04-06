@@ -36,7 +36,7 @@ export default function SpendingChart({ data }) {
   if (!data?.length) return null;
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={300}>
       <PieChart>
         <Pie
           data={data}

@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useAppSelector } from "../../hooks/useAppSelector";
 import { useAppDispatch } from "../../hooks/useAppSelector";
-import { toggleSidebar } from "../../store/uiSlice";
+import { toggleSidebar, setSidebar } from "../../store/uiSlice";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -19,13 +19,21 @@ const NAV_ITEMS = [
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isMobile }) {
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector((state) => state.ui.isSidebarOpen);
+  const location = useLocation();
+
+  const handleNavClick = () => {
+    if (isMobile) dispatch(setSidebar(false));
+  };
 
   return (
     <motion.aside
-      animate={{ width: isOpen ? 240 : 72 }}
+      animate={{
+        x: isMobile ? (isOpen ? 0 : -240) : 0,
+        width: isMobile ? 240 : isOpen ? 240 : 72,
+      }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       style={{
         position: "fixed",
@@ -40,7 +48,7 @@ export default function Sidebar() {
         zIndex: 100,
       }}
     >
-      {/* Logo */}
+      {/* Logo row */}
       <div
         style={{
           display: "flex",
@@ -49,6 +57,7 @@ export default function Sidebar() {
           padding: isOpen ? "20px 16px 20px 20px" : "20px 0",
           borderBottom: "0.5px solid var(--color-border)",
           minHeight: "64px",
+          flexShrink: 0,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -95,6 +104,7 @@ export default function Sidebar() {
               color: "var(--color-text-secondary)",
               display: "flex",
               alignItems: "center",
+              flexShrink: 0,
             }}
           >
             <ChevronLeft size={14} />
@@ -110,56 +120,64 @@ export default function Sidebar() {
           display: "flex",
           flexDirection: "column",
           gap: "4px",
+          overflowY: "auto",
+          overflowX: "hidden",
         }}
       >
-        {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            style={({ isActive }) => ({
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              padding: isOpen ? "10px 12px" : "10px 0",
-              justifyContent: isOpen ? "flex-start" : "center",
-              borderRadius: "8px",
-              textDecoration: "none",
-              color: isActive ? "#f97316" : "var(--color-text-secondary)",
-              background: isActive
-                ? "var(--color-accent-muted)"
-                : "transparent",
-              fontWeight: isActive ? 500 : 400,
-              fontSize: "14px",
-              transition: "all 0.15s ease",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-            })}
-          >
-            <Icon size={18} style={{ flexShrink: 0 }} />
-            <AnimatePresence>
-              {isOpen && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  {label}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </NavLink>
-        ))}
+        {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
+          const isActive = location.pathname === to;
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={handleNavClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: isOpen ? "10px 12px" : "10px 0",
+                justifyContent: isOpen ? "flex-start" : "center",
+                borderRadius: "8px",
+                textDecoration: "none",
+                color: isActive ? "#f97316" : "var(--color-text-secondary)",
+                background: isActive
+                  ? "var(--color-accent-muted)"
+                  : "transparent",
+                fontWeight: isActive ? 500 : 400,
+                fontSize: "14px",
+                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+              }}
+            >
+              <Icon size={18} style={{ flexShrink: 0 }} />
+              <AnimatePresence>
+                {isOpen && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    {label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </NavLink>
+          );
+        })}
       </nav>
 
-      {/* Collapse button when sidebar is closed */}
-      {!isOpen && (
+      {/* Collapse button — desktop only when closed */}
+      {!isOpen && !isMobile && (
         <div
           style={{
             padding: "16px 0",
             display: "flex",
             justifyContent: "center",
             borderTop: "0.5px solid var(--color-border)",
+            flexShrink: 0,
           }}
         >
           <button

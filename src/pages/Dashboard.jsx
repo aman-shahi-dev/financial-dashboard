@@ -43,10 +43,10 @@ export default function Dashboard() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+      style={{ display: "flex", flexDirection: "column", gap: "20px" }}
     >
       {/* Summary cards */}
-      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
         <SummaryCard
           index={0}
           label="Total Balance"
@@ -76,16 +76,18 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Charts row */}
-      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+      {/* Charts */}
+      <div
+        id="charts-row"
+        style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}
+      >
         <div
           style={{
-            flex: 2,
-            minWidth: "280px",
+            flex: "2 1 280px",
             background: "var(--color-surface)",
             border: "0.5px solid var(--color-border)",
             borderRadius: "14px",
-            padding: "20px 24px",
+            padding: "20px",
           }}
         >
           <p
@@ -112,12 +114,11 @@ export default function Dashboard() {
 
         <div
           style={{
-            flex: 1,
-            minWidth: "260px",
+            flex: "1 1 220px",
             background: "var(--color-surface)",
             border: "0.5px solid var(--color-border)",
             borderRadius: "14px",
-            padding: "20px 24px",
+            padding: "20px",
           }}
         >
           <p
@@ -149,7 +150,7 @@ export default function Dashboard() {
           background: "var(--color-surface)",
           border: "0.5px solid var(--color-border)",
           borderRadius: "14px",
-          padding: "20px 24px",
+          padding: "20px",
         }}
       >
         <div
@@ -158,6 +159,8 @@ export default function Dashboard() {
             alignItems: "center",
             justifyContent: "space-between",
             marginBottom: "16px",
+            gap: "12px",
+            flexWrap: "wrap",
           }}
         >
           <div>
@@ -196,6 +199,7 @@ export default function Dashboard() {
                 fontWeight: 500,
                 cursor: "pointer",
                 fontFamily: "Inter, sans-serif",
+                whiteSpace: "nowrap",
               }}
             >
               <Plus size={14} /> Add transaction
