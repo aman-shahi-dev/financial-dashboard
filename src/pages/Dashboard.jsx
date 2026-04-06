@@ -4,67 +4,32 @@ import { Wallet, TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { useAppSelector } from "../hooks/useAppSelector";
 import { useAppDispatch } from "../hooks/useAppSelector";
 import { openModal } from "../store/uiSlice";
+import { deleteTransaction } from "../store/transactionsSlice";
 import { can } from "../utils/rbac";
-import { formatCurrency, getMonthKey } from "../utils/formatters";
-import { MONTHS } from "../utils/mockData";
+import { formatCurrency } from "../utils/formatters";
+import {
+  selectNetBalance,
+  selectTotalIncome,
+  selectTotalExpenses,
+  selectBalanceTrend,
+  selectSpendingByCategory,
+} from "../store/insightsSlice";
 import SummaryCard from "../components/ui/SummaryCard";
 import TransactionRow from "../components/ui/TransactionRow";
 import BalanceTrendChart from "../components/charts/BalanceTrendChart";
 import SpendingChart from "../components/charts/SpendingChart";
 import EmptyState from "../components/ui/EmptyState";
-import { editTransaction, deleteTransaction } from "../store/transactionsSlice";
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
-  const transactions = useAppSelector((state) => state.transactions.list);
-  const role = useAppSelector((state) => state.auth.role);
+  const transactions = useAppSelector((s) => s.transactions.list);
+  const role = useAppSelector((s) => s.auth.role);
+  const totalBalance = useAppSelector(selectNetBalance);
+  const totalIncome = useAppSelector(selectTotalIncome);
+  const totalExpenses = useAppSelector(selectTotalExpenses);
+  const trendData = useAppSelector(selectBalanceTrend);
+  const spendingData = useAppSelector(selectSpendingByCategory);
 
-  // Summary totals
-  const { totalBalance, totalIncome, totalExpenses } = useMemo(() => {
-    const totalIncome = transactions
-      .filter((t) => t.type === "income")
-      .reduce((s, t) => s + t.amount, 0);
-    const totalExpenses = transactions
-      .filter((t) => t.type === "expense")
-      .reduce((s, t) => s + t.amount, 0);
-    return {
-      totalBalance: totalIncome - totalExpenses,
-      totalIncome,
-      totalExpenses,
-    };
-  }, [transactions]);
-
-  // Balance trend per month
-  const trendData = useMemo(() => {
-    const map = {};
-    transactions.forEach((t) => {
-      const key = getMonthKey(t.date);
-      if (!map[key]) map[key] = { income: 0, expenses: 0 };
-      if (t.type === "income") map[key].income += t.amount;
-      if (t.type === "expense") map[key].expenses += t.amount;
-    });
-    return Object.entries(map)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, val]) => ({
-        month: MONTHS[parseInt(key.split("-")[1]) - 1],
-        balance: val.income - val.expenses,
-      }));
-  }, [transactions]);
-
-  // Spending by category (expenses only)
-  const spendingData = useMemo(() => {
-    const map = {};
-    transactions
-      .filter((t) => t.type === "expense")
-      .forEach((t) => {
-        map[t.category] = (map[t.category] ?? 0) + t.amount;
-      });
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [transactions]);
-
-  // Recent 5 transactions
   const recentTransactions = useMemo(
     () =>
       [...transactions]
@@ -113,7 +78,6 @@ export default function Dashboard() {
 
       {/* Charts row */}
       <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-        {/* Balance trend */}
         <div
           style={{
             flex: 2,
@@ -146,7 +110,6 @@ export default function Dashboard() {
           <BalanceTrendChart data={trendData} />
         </div>
 
-        {/* Spending breakdown */}
         <div
           style={{
             flex: 1,
@@ -232,6 +195,7 @@ export default function Dashboard() {
                 fontSize: "13px",
                 fontWeight: 500,
                 cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
               }}
             >
               <Plus size={14} /> Add transaction

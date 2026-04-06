@@ -9,19 +9,17 @@ import { CATEGORIES } from "../../utils/mockData";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
-const FIELD = (label, key, type = "text", opts = {}) => ({
-  label,
-  key,
-  type,
-  ...opts,
-});
-
 const FIELDS = [
-  FIELD("Description", "description"),
-  FIELD("Amount", "amount", "number", { min: 0 }),
-  FIELD("Date", "date", "date"),
-  FIELD("Type", "type", "select", { options: ["income", "expense"] }),
-  FIELD("Category", "category", "select", { options: CATEGORIES }),
+  { label: "Description", key: "description", type: "text" },
+  { label: "Amount", key: "amount", type: "number", min: 0 },
+  { label: "Date", key: "date", type: "date" },
+  {
+    label: "Type",
+    key: "type",
+    type: "select",
+    options: ["income", "expense"],
+  },
+  { label: "Category", key: "category", type: "select", options: CATEGORIES },
 ];
 
 const EMPTY = {
@@ -64,11 +62,9 @@ export default function Modal() {
       amount: Number(form.amount),
       id: editing?.id ?? uid(),
     };
-    if (editing) {
-      dispatch(editTransaction(payload));
-    } else {
-      dispatch(addTransaction(payload));
-    }
+    editing
+      ? dispatch(editTransaction(payload))
+      : dispatch(addTransaction(payload));
     dispatch(closeModal());
   };
 
@@ -98,175 +94,190 @@ export default function Modal() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.5)",
+              background: "rgba(0,0,0,0.6)",
               zIndex: 200,
             }}
           />
 
-          {/* Modal */}
-          <motion.div
-            key="modal"
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+          {/* Modal wrapper — handles centering + scroll */}
+          <div
             style={{
               position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
+              inset: 0,
               zIndex: 201,
-              background: "var(--color-surface)",
-              border: "0.5px solid var(--color-border)",
-              borderRadius: "16px",
-              padding: "28px",
-              width: "100%",
-              maxWidth: "440px",
-              boxSizing: "border-box",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "24px 16px",
+              overflowY: "auto",
+              pointerEvents: "none",
             }}
           >
-            {/* Header */}
-            <div
+            {/* Modal card */}
+            <motion.div
+              key="modal"
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "24px",
+                background: "var(--color-surface)",
+                border: "0.5px solid var(--color-border)",
+                borderRadius: "16px",
+                padding: "28px",
+                width: "100%",
+                maxWidth: "440px",
+                pointerEvents: "all",
+                boxSizing: "border-box",
               }}
             >
-              <div>
-                <h2
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    color: "var(--color-text-primary)",
-                  }}
-                >
-                  {editing ? "Edit transaction" : "Add transaction"}
-                </h2>
-                <p
-                  style={{
-                    fontSize: "12px",
-                    color: "var(--color-text-secondary)",
-                    marginTop: "2px",
-                  }}
-                >
-                  {editing
-                    ? "Update the details below"
-                    : "Fill in the details below"}
-                </p>
-              </div>
-              <button
-                onClick={() => dispatch(closeModal())}
+              {/* Header */}
+              <div
                 style={{
-                  background: "none",
-                  border: "0.5px solid var(--color-border)",
-                  borderRadius: "8px",
-                  padding: "6px",
-                  cursor: "pointer",
-                  color: "var(--color-text-secondary)",
                   display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "24px",
                 }}
               >
-                <X size={15} />
-              </button>
-            </div>
-
-            {/* Fields */}
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
-            >
-              {FIELDS.map(({ label, key, type, options, min }) => (
-                <div key={key}>
-                  <label
+                <div>
+                  <h2
                     style={{
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      color: "var(--color-text-secondary)",
-                      display: "block",
-                      marginBottom: "6px",
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      color: "var(--color-text-primary)",
                     }}
                   >
-                    {label}
-                  </label>
-                  {type === "select" ? (
-                    <select
-                      value={form[key]}
-                      onChange={(e) =>
-                        setForm({ ...form, [key]: e.target.value })
-                      }
-                      style={inputStyle(key)}
-                    >
-                      {options.map((o) => (
-                        <option key={o} value={o}>
-                          {o.charAt(0).toUpperCase() + o.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type={type}
-                      min={min}
-                      value={form[key]}
-                      onChange={(e) =>
-                        setForm({ ...form, [key]: e.target.value })
-                      }
-                      style={inputStyle(key)}
-                    />
-                  )}
-                  {errors[key] && (
-                    <p
+                    {editing ? "Edit transaction" : "Add transaction"}
+                  </h2>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--color-text-secondary)",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {editing
+                      ? "Update the details below"
+                      : "Fill in the details below"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => dispatch(closeModal())}
+                  style={{
+                    background: "none",
+                    border: "0.5px solid var(--color-border)",
+                    borderRadius: "8px",
+                    padding: "6px",
+                    cursor: "pointer",
+                    color: "var(--color-text-secondary)",
+                    display: "flex",
+                  }}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* Fields */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "14px",
+                }}
+              >
+                {FIELDS.map(({ label, key, type, options, min }) => (
+                  <div key={key}>
+                    <label
                       style={{
-                        fontSize: "11px",
-                        color: "var(--color-expense)",
-                        marginTop: "4px",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        color: "var(--color-text-secondary)",
+                        display: "block",
+                        marginBottom: "6px",
                       }}
                     >
-                      {errors[key]}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
+                      {label}
+                    </label>
+                    {type === "select" ? (
+                      <select
+                        value={form[key]}
+                        onChange={(e) =>
+                          setForm({ ...form, [key]: e.target.value })
+                        }
+                        style={inputStyle(key)}
+                      >
+                        {options.map((o) => (
+                          <option key={o} value={o}>
+                            {o.charAt(0).toUpperCase() + o.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={type}
+                        min={min}
+                        value={form[key]}
+                        onChange={(e) =>
+                          setForm({ ...form, [key]: e.target.value })
+                        }
+                        style={inputStyle(key)}
+                      />
+                    )}
+                    {errors[key] && (
+                      <p
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--color-expense)",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {errors[key]}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
 
-            {/* Actions */}
-            <div style={{ display: "flex", gap: "10px", marginTop: "24px" }}>
-              <button
-                onClick={() => dispatch(closeModal())}
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  borderRadius: "8px",
-                  border: "0.5px solid var(--color-border)",
-                  background: "none",
-                  color: "var(--color-text-secondary)",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  fontFamily: "Inter, sans-serif",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#f97316",
-                  color: "#fff",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  fontFamily: "Inter, sans-serif",
-                }}
-              >
-                {editing ? "Save changes" : "Add transaction"}
-              </button>
-            </div>
-          </motion.div>
+              {/* Actions */}
+              <div style={{ display: "flex", gap: "10px", marginTop: "24px" }}>
+                <button
+                  onClick={() => dispatch(closeModal())}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "0.5px solid var(--color-border)",
+                    background: "none",
+                    color: "var(--color-text-secondary)",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#f97316",
+                    color: "#fff",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
+                  {editing ? "Save changes" : "Add transaction"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

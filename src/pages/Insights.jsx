@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -8,11 +7,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
 import { useAppSelector } from "../hooks/useAppSelector";
-import { formatCurrency, getMonthKey } from "../utils/formatters";
-import { CATEGORY_COLORS, MONTHS } from "../utils/mockData";
+import { formatCurrency } from "../utils/formatters";
 import {
   TrendingUp,
   TrendingDown,
@@ -21,6 +18,14 @@ import {
   Zap,
 } from "lucide-react";
 import EmptyState from "../components/ui/EmptyState";
+import {
+  selectMonthlyData,
+  selectSpendingByCategory,
+  selectSavingsRate,
+  selectTopCategory,
+  selectMoMChange,
+  selectAvgMonthlyExpense,
+} from "../store/insightsSlice";
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -69,7 +74,7 @@ const InsightCard = ({ icon: Icon, title, value, sub, accent, index }) => (
         height: "40px",
         borderRadius: "10px",
         flexShrink: 0,
-        background: `${accent}18`,
+        background: `${accent}22`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -115,78 +120,12 @@ const InsightCard = ({ icon: Icon, title, value, sub, accent, index }) => (
 
 export default function Insights() {
   const transactions = useAppSelector((s) => s.transactions.list);
-
-  // Per-month income vs expenses
-  const monthlyData = useMemo(() => {
-    const map = {};
-    transactions.forEach((t) => {
-      const key = getMonthKey(t.date);
-      if (!map[key]) map[key] = { income: 0, expenses: 0 };
-      if (t.type === "income") map[key].income += t.amount;
-      if (t.type === "expense") map[key].expenses += t.amount;
-    });
-    return Object.entries(map)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, val]) => ({
-        month: MONTHS[parseInt(key.split("-")[1]) - 1],
-        income: val.income,
-        expenses: val.expenses,
-        savings: val.income - val.expenses,
-      }));
-  }, [transactions]);
-
-  // Spending by category
-  const categoryData = useMemo(() => {
-    const map = {};
-    transactions
-      .filter((t) => t.type === "expense")
-      .forEach((t) => {
-        map[t.category] = (map[t.category] ?? 0) + t.amount;
-      });
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [transactions]);
-
-  // Key insights
-  const insights = useMemo(() => {
-    const totalIncome = transactions
-      .filter((t) => t.type === "income")
-      .reduce((s, t) => s + t.amount, 0);
-    const totalExpenses = transactions
-      .filter((t) => t.type === "expense")
-      .reduce((s, t) => s + t.amount, 0);
-    const savingsRate =
-      totalIncome > 0
-        ? (((totalIncome - totalExpenses) / totalIncome) * 100).toFixed(1)
-        : 0;
-    const topCategory = categoryData[0];
-
-    // Month-over-month expense comparison
-    const months = [...monthlyData];
-    const current = months[months.length - 1];
-    const prev = months[months.length - 2];
-    const momDiff =
-      current && prev
-        ? (((current.expenses - prev.expenses) / prev.expenses) * 100).toFixed(
-            1,
-          )
-        : null;
-
-    // Avg monthly spend
-    const avgMonthlyExpense = monthlyData.length
-      ? (totalExpenses / monthlyData.length).toFixed(0)
-      : 0;
-
-    return {
-      savingsRate,
-      topCategory,
-      momDiff,
-      avgMonthlyExpense,
-      totalIncome,
-      totalExpenses,
-    };
-  }, [transactions, categoryData, monthlyData]);
+  const monthlyData = useAppSelector(selectMonthlyData);
+  const categoryData = useAppSelector(selectSpendingByCategory);
+  const savingsRate = useAppSelector(selectSavingsRate);
+  const topCategory = useAppSelector(selectTopCategory);
+  const momDiff = useAppSelector(selectMoMChange);
+  const avgMonthlyExpense = useAppSelector(selectAvgMonthlyExpense);
 
   if (!transactions.length) {
     return (
@@ -210,7 +149,7 @@ export default function Insights() {
           index={0}
           icon={Award}
           title="Savings rate"
-          value={`${insights.savingsRate}%`}
+          value={`${savingsRate}%`}
           sub="of total income saved"
           accent="#f97316"
         />
@@ -218,37 +157,33 @@ export default function Insights() {
           index={1}
           icon={AlertCircle}
           title="Top spending category"
-          value={insights.topCategory?.name ?? "—"}
-          sub={
-            insights.topCategory
-              ? formatCurrency(insights.topCategory.value) + " total"
-              : ""
-          }
+          value={topCategory?.name ?? "—"}
+          sub={topCategory ? formatCurrency(topCategory.value) + " total" : ""}
           accent="#f87171"
         />
         <InsightCard
           index={2}
           icon={Zap}
           title="Avg monthly spend"
-          value={formatCurrency(insights.avgMonthlyExpense)}
+          value={formatCurrency(avgMonthlyExpense)}
           sub="across all months"
           accent="#fbbf24"
         />
         <InsightCard
           index={3}
-          icon={insights.momDiff >= 0 ? TrendingUp : TrendingDown}
+          icon={Number(momDiff) >= 0 ? TrendingUp : TrendingDown}
           title="Month-over-month"
           value={
-            insights.momDiff !== null
-              ? `${insights.momDiff > 0 ? "+" : ""}${insights.momDiff}%`
+            momDiff !== null
+              ? `${Number(momDiff) > 0 ? "+" : ""}${momDiff}%`
               : "—"
           }
           sub="change in expenses"
-          accent={insights.momDiff >= 0 ? "#f87171" : "#34d399"}
+          accent={Number(momDiff) >= 0 ? "#f87171" : "#34d399"}
         />
       </div>
 
-      {/* Monthly income vs expenses bar chart */}
+      {/* Monthly bar chart */}
       <div
         style={{
           background: "var(--color-surface)",
@@ -305,8 +240,8 @@ export default function Insights() {
               }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-              width={45}
+              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+              width={48}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar
@@ -327,7 +262,7 @@ export default function Insights() {
         </ResponsiveContainer>
       </div>
 
-      {/* Category breakdown bars */}
+      {/* Category breakdown */}
       <div
         style={{
           background: "var(--color-surface)",
@@ -359,7 +294,6 @@ export default function Insights() {
           {categoryData.map((cat, i) => {
             const max = categoryData[0].value;
             const pct = ((cat.value / max) * 100).toFixed(1);
-            const color = CATEGORY_COLORS[cat.name] ?? "#f97316";
             return (
               <motion.div
                 key={cat.name}
@@ -386,7 +320,7 @@ export default function Insights() {
                         width: "8px",
                         height: "8px",
                         borderRadius: "50%",
-                        background: color,
+                        background: cat.color,
                       }}
                     />
                     <span
@@ -426,7 +360,7 @@ export default function Insights() {
                     style={{
                       height: "100%",
                       borderRadius: "3px",
-                      background: color,
+                      background: cat.color,
                     }}
                   />
                 </div>
@@ -458,23 +392,23 @@ export default function Insights() {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {[
             {
-              text: `Your savings rate is ${insights.savingsRate}% — ${insights.savingsRate >= 20 ? "great job, you're above the recommended 20%" : "try to aim for at least 20% of your income"}.`,
+              text: `Your savings rate is ${savingsRate}% — ${Number(savingsRate) >= 20 ? "great job, you're above the recommended 20%" : "try to aim for at least 20% of your income"}.`,
               color:
-                insights.savingsRate >= 20 ? "var(--color-income)" : "#fbbf24",
+                Number(savingsRate) >= 20 ? "var(--color-income)" : "#fbbf24",
             },
             {
-              text: `${insights.topCategory?.name} is your biggest expense category at ${formatCurrency(insights.topCategory?.value ?? 0)}.`,
+              text: `${topCategory?.name ?? "N/A"} is your biggest expense category at ${formatCurrency(topCategory?.value ?? 0)}.`,
               color: "#f87171",
             },
             {
               text:
-                insights.momDiff !== null
-                  ? `Your expenses ${insights.momDiff >= 0 ? "increased" : "decreased"} by ${Math.abs(insights.momDiff)}% compared to last month.`
+                momDiff !== null
+                  ? `Your expenses ${Number(momDiff) >= 0 ? "increased" : "decreased"} by ${Math.abs(Number(momDiff))}% compared to last month.`
                   : "Not enough months of data for a comparison yet.",
-              color: insights.momDiff >= 0 ? "#f87171" : "var(--color-income)",
+              color: Number(momDiff) >= 0 ? "#f87171" : "var(--color-income)",
             },
             {
-              text: `You spend an average of ${formatCurrency(insights.avgMonthlyExpense)} per month across all categories.`,
+              text: `You spend an average of ${formatCurrency(avgMonthlyExpense)} per month across all categories.`,
               color: "#f97316",
             },
           ].map((obs, i) => (
